@@ -12,22 +12,53 @@ def add_to_db(position):
     db = client[MONGO_DB]
     collection = db[position]
     collection.insert_many(search_vacancies(position))
+    return collection.find({})
 
 # функцию, которая производит поиск и выводит на экран вакансии с заработной
 # платой больше введённой суммы, а также использование одновременно мин/макс
 # зарплаты. Необязательно - возможность выбрать вакансии без указанных зарплат
 
 
-def select_vacancies(position, salary):
+def select_vacancies(position, salary_min, salary_max):
     client = MongoClient(MONGO_URI)
     db = client[MONGO_DB]
     collection = db[position]
-    for item in list(collection.find({})):
+    for item in list(collection.find({"salary_min": {"$gte": salary_min}})):
         pprint(item)
-    for item in list(collection.find({"max_salary": None})):
+    pprint("\n\n\n\n")
+    for item in list(collection.find({"salary_max": {"$lte": salary_max}, "salary_min": {"$gte": salary_min}})):
         pprint(item)
 
 
-add_to_db("data")
-select_vacancies("data", 3)
+def add_unique(database, record):
+    client = MongoClient(MONGO_URI)
+    db = client[MONGO_DB]
+    collection = db[database]
+    if not check_present(record['link']):
+        collection.insert_one(record)
+
+
+def check_present(link):
+    is_present = False
+    for item in collection.find({}):
+        if item['link'] == link:
+            is_present = True
+    return is_present
+
+
+rec = {'link': 'https://www.superjob.ru//vakansii/senior-frontend-razrabotchik-36691339.html',
+ 'name': 'Senior frontend-разработчик',
+ 'salary_max': 180000,
+ 'salary_min': 180000}
+client = MongoClient(MONGO_URI)
+db = client[MONGO_DB]
+collection = db["qa"]
+add_unique("qa", rec)
+s=0
+for i in collection.find({}):
+    s += 1
+print(s)
+
+
+# select_vacancies("data", 100000, 500000)
 

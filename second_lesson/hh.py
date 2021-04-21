@@ -34,6 +34,24 @@ def parse_salary(salary_str):
     return result
 
 
+def collect_info(vacancies):
+    res = []
+    for vac in vacancies:
+        for f in vac.findChildren(recursive=False):
+            vac_dict = {}
+            if f.find("a") is not None:
+                if "vakansii" in f.find("a")["href"]:
+                    vac_dict["name"] = f.find("a").text
+                    vac_dict["link"] = BASE_URL + f.find("a")["href"]
+                    salary = f.findChildren(recursive=False)[0].findChildren(recursive=False)[0].findChildren(recursive=False)[
+                        0].findChildren(recursive=False)[2].findChildren(recursive=False)[0].findChildren(
+                        recursive=False)[0].findChildren(recursive=False)[1].findChildren(recursive=False)[0].text
+                    salary_value = parse_salary(salary)
+                    vac_dict["salary_min"] = salary_value["min"]
+                    vac_dict["salary_max"] = salary_value["max"]
+                    res.append(vac_dict)
+    return res
+
 def search_vacancies(position):
     result = []
     url = "https://www.superjob.ru/vacancy/search/?keywords={}&geo%5Bt%5D%5B0%5D=4&page={}"
@@ -42,22 +60,15 @@ def search_vacancies(position):
     }
     page_num = 1
     r = requests.get(url.format(position, str(page_num)))
+    print(url.format(position, str(page_num)))
+    r = requests.get(url.format(position, str(page_num)))
     soup = bs(r.text, "html.parser")
+    vacs = list(soup.find_all(attrs={"class": "f-test-search-result-item"}))
+    result += collect_info(vacs)
     while len(list(soup.find_all('span', text="Дальше"))) > 0:
-        vac_dict = {}
+        vacs = list(soup.find_all(attrs={"class": "f-test-search-result-item"}))
+        result.append(collect_info(vacs))
         r = requests.get(url.format(position, str(page_num)))
         page_num += 1
         soup = bs(r.text, "html.parser")
-        vacancies = list(soup.find_all(attrs={"class": "f-test-search-result-item"}))
-        for vac in vacancies:
-            for f in vac.findChildren(recursive=False):
-                if f.find("a") is not None:
-                    if "vakansii" in f.find("a")["href"]:
-                        vac_dict["name"] = f.find("a").text
-                        vac_dict["link"] = BASE_URL + f.find("a")["href"]
-                        salary = f.findChildren(recursive=False)[0].findChildren(recursive=False)[0].findChildren(recursive=False)[0].findChildren(recursive=False)[2].findChildren(recursive=False)[0].findChildren(recursive=False)[0].findChildren(recursive=False)[1].findChildren(recursive=False)[0].text
-                        salary_value = parse_salary(salary)
-                        vac_dict["salary_min"] = salary_value["min"]
-                        vac_dict["salary_max"] = salary_value["max"]
-        result.append(vac_dict)
     return result
