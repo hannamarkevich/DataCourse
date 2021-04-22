@@ -25,7 +25,6 @@ def select_vacancies(position, salary_min, salary_max):
     collection = db[position]
     for item in list(collection.find({"salary_min": {"$gte": salary_min}})):
         pprint(item)
-    pprint("\n\n\n\n")
     for item in list(collection.find({"salary_max": {"$lte": salary_max}, "salary_min": {"$gte": salary_min}})):
         pprint(item)
 
@@ -34,16 +33,8 @@ def add_unique(database, record):
     client = MongoClient(MONGO_URI)
     db = client[MONGO_DB]
     collection = db[database]
-    if not check_present(record['link']):
+    if len(list(collection.find({"link": record["link"]}).count())) > 0:
         collection.insert_one(record)
-
-
-def check_present(link):
-    is_present = False
-    for item in collection.find({}):
-        if item['link'] == link:
-            is_present = True
-    return is_present
 
 
 rec = {'link': 'https://www.superjob.ru//vakansii/senior-frontend-razrabotchik-36691339.html',
@@ -53,11 +44,8 @@ rec = {'link': 'https://www.superjob.ru//vakansii/senior-frontend-razrabotchik-3
 client = MongoClient(MONGO_URI)
 db = client[MONGO_DB]
 collection = db["qa"]
-add_unique("qa", rec)
-s=0
-for i in collection.find({}):
-    s += 1
-print(s)
+#print(len(list(add_unique("qa", rec))))
+
 
 
 # select_vacancies("data", 100000, 500000)
